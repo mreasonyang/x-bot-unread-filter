@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+  <title id="title">X 私信徽标过滤效果示意</title>
+  <desc id="desc">虚构数据：一个普通私信会话和两个 Grok Bot 会话未读。原生导航显示三，脚本启用后显示一。聊天列表中的蓝点保持不变。</desc>
+  <rect width="1200" height="500" rx="24" fill="#f3f5f7"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif" fill="#111827">
+    <text x="48" y="58" font-size="26" font-weight="700">x-bot-unread-filter</text>
+    <text x="48" y="91" font-size="16" fill="#536471">效果示意 · 1 个普通私信 + 2 个 Grok Bot 会话未读</text>
+    <g transform="translate(48 118)">
+      <rect width="536" height="304" rx="18" fill="#fff"/>
+      <text x="24" y="39" font-size="18" font-weight="600">原生汇总</text>
+      <path d="M42 106c-17 0-29 11-29 26 0 7 3 13 8 18l-3 14 16-8 8 1c17 0 29-11 29-25s-12-26-29-26Z" fill="#0f1419"/>
+      <circle cx="66" cy="109" r="15" fill="#1d9bf0"/>
+      <text x="66" y="115" text-anchor="middle" font-size="17" fill="#fff" font-weight="700">3</text>
+      <text x="17" y="198" font-size="15" fill="#536471">私信</text>
+      <path d="M106 63v212" stroke="#e5e7eb"/>
+      <text x="135" y="101" font-size="18">普通私信</text>
+      <text x="135" y="170" font-size="18">Grok Bot A</text>
+      <text x="135" y="239" font-size="18">Grok Bot B</text>
+      <g fill="#1d9bf0"><circle cx="495" cy="95" r="5"/><circle cx="495" cy="164" r="5"/><circle cx="495" cy="233" r="5"/></g>
+      <path d="M132 126h377M132 195h377" stroke="#eff3f4"/>
+    </g>
+    <g transform="translate(616 118)">
+      <rect width="536" height="304" rx="18" fill="#fff"/>
+      <text x="24" y="39" font-size="18" font-weight="600">脚本启用后</text>
+      <path d="M42 106c-17 0-29 11-29 26 0 7 3 13 8 18l-3 14 16-8 8 1c17 0 29-11 29-25s-12-26-29-26Z" fill="#0f1419"/>
+      <circle cx="66" cy="109" r="15" fill="#1d9bf0"/>
+      <text x="66" y="115" text-anchor="middle" font-size="17" fill="#fff" font-weight="700">1</text>
+      <text x="17" y="198" font-size="15" fill="#536471">私信</text>
+      <path d="M106 63v212" stroke="#e5e7eb"/>
+      <text x="135" y="101" font-size="18">普通私信</text>
+      <text x="135" y="170" font-size="18">Grok Bot A</text>
+      <text x="135" y="239" font-size="18">Grok Bot B</text>
+      <g fill="#1d9bf0"><circle cx="495" cy="95" r="5"/><circle cx="495" cy="164" r="5"/><circle cx="495" cy="233" r="5"/></g>
+      <path d="M132 126h377M132 195h377" stroke="#eff3f4"/>
+    </g>
+    <text x="48" y="463" font-size="17" fill="#536471">只调整导航徽标；消息、已读状态与聊天列表蓝点照常保留。</text>
+  </g>
+</svg>
