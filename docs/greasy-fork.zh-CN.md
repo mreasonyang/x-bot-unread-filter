@@ -4,7 +4,9 @@
 
 1. 安装 Tampermonkey，并在扩展详情中开启“Allow User Scripts / 允许用户脚本”。
 2. 点击本页“安装此脚本”，检查运行范围仅为 `https://x.com/*`，确认安装。
-3. 将 Tampermonkey 站点访问限制为 `x.com`，刷新 X。
+3. 刷新 X。脚本仅在 `x.com` 运行。
+
+点击安装后若只显示源码，可下载 `.user.js`，在 Tampermonkey 的 Utilities → Import from file 中导入，已在 Brave 实测。如果扩展站点访问只允许 `x.com`，直接安装和自动更新可能受阻；需要自动更新时可按提示允许下载域名 `update.greasyfork.org`，或保持现有权限并手动导入新版。
 
 ## 范围与数据
 

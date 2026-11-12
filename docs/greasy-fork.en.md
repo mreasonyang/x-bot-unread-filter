@@ -4,7 +4,9 @@ Exclude Grok Bot conversations from X's navigation DM unread badge while preserv
 
 1. Install Tampermonkey and enable **Allow User Scripts** in the browser's extension settings.
 2. Use this page's install button and confirm the script runs only on `https://x.com/*`.
-3. Limit Tampermonkey's site access to `x.com` and reload X.
+3. Reload X. The script runs only on `x.com`.
+
+If the install link displays source text, download the `.user.js` and use Tampermonkey's Utilities → Import from file, verified in Brave. Restricting extension access to `x.com` can block installation and updates. Allow `update.greasyfork.org` when prompted if you want automatic updates, or keep your current permissions and import new versions manually.
 
 ## Scope and privacy
 

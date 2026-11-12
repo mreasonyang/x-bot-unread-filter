@@ -17,9 +17,11 @@
 1. 从 [Tampermonkey 官方网站](https://www.tampermonkey.net/)安装对应浏览器扩展。
 2. 在扩展详情中开启 **Allow User Scripts / 允许用户脚本**。新版 Chromium 浏览器需要这一步，见 [官方说明](https://www.tampermonkey.net/faq.php?locale=en&q=Q209)。
 3. 打开安装链接，在 Tampermonkey 页面检查名称和运行范围 `https://x.com/*`，点击安装。
-4. 将 Tampermonkey 的站点访问限制为 `x.com`，刷新 X。
+4. 刷新 X。脚本的运行范围仅为 `x.com`。
 
-也可以在 Tampermonkey 的 Utilities → Import from file 中导入 `x-human-dm-badge.user.js`。
+如果点击安装后只显示源码，可下载 `.user.js` 文件，在 Tampermonkey 的 Utilities → Import from file 中导入；这条路径已在 Brave 实测。
+
+如果把扩展的站点访问限制为 `x.com`，直接安装和自动更新可能受阻。需要自动更新时，可按 Tampermonkey 提示允许所选来源的下载域名：Greasy Fork 为 `update.greasyfork.org`，GitHub 为 `raw.githubusercontent.com`；也可保持现有权限，之后手动导入新版文件。扩展下载更新的网络访问与脚本自身的运行权限是两回事。
 
 停用或删除这个脚本并刷新 X，即可恢复原生显示。安装和使用都不需要提供 X 账号、密码或 API Key。
 
@@ -69,4 +71,4 @@ npm run prepare-release
 
 Exclude Grok Bot conversations from X's navigation DM unread badge while keeping ordinary DM alerts and bot conversation unread dots. Desktop Brave with Tampermonkey 5.5.1 has been verified; other browsers are untested. This script does not detect automated ordinary X accounts, mark messages as read, change push notifications, or run inside the X mobile apps.
 
-Install Tampermonkey, allow user scripts, install the `.user.js`, grant access only to `x.com`, and reload X. No X credentials or API keys are needed. MIT licensed; unofficial and unaffiliated with X or xAI.
+Install Tampermonkey, allow user scripts, install the `.user.js`, and reload X. If the install link displays source text, download the file and use Utilities → Import from file. Restricting extension access to `x.com` can block installation and updates; allow your source's download host when prompted, or import new versions manually. The script itself runs only on `x.com`. No X credentials or API keys are needed. MIT licensed; unofficial and unaffiliated with X or xAI.
