@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.3
+
+- Update localized script titles, one-line descriptions, repository README, and Greasy Fork listing copy in Chinese and English to describe Grok Bot unread filtering clearly without implying human-account detection.
+- Bump version metadata to 0.0.3 with no change to filtering logic or runtime behavior from 0.0.2.
+
 ## 0.0.2
 
 - Exclude Grok Bot from the browser tab-title count and favicon reminder as well as the navigation DM badge.
