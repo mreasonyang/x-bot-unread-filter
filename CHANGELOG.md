@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.4
+
+- Set the default `@name` to the Chinese title (`X 未读提醒排除 Grok Bot`) so Greasy Fork displays the updated title when `zh-CN` is the default locale, while keeping `@name:en`, `@namespace`, script filename, Greasy Fork ID `605054`, and source/update URLs stable.
+- Document manual migration for existing `0.0.1`–`0.0.3` users (updating inside the existing Tampermonkey editor entry or removing the old entry before installing `0.0.4`), since script managers identify installations by `@name` + `@namespace`.
+- Bump version metadata to `0.0.4` with no change to runtime filtering logic from `0.0.2`/`0.0.3`.
+
 ## 0.0.3
 
 - Update localized script titles, one-line descriptions, repository README, and Greasy Fork listing copy in Chinese and English to describe Grok Bot unread filtering clearly without implying human-account detection.

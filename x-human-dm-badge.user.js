@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         X 私信提醒仅计入真人
+// @name X 未读提醒排除 Grok Bot
 // @name:zh-CN X 未读提醒排除 Grok Bot
 // @name:en X Unread Reminders: Exclude Grok Bot
 // @namespace    local.eason.x-human-dm-badge
-// @version 0.0.3
+// @version 0.0.4
 // @description 在 x.com 桌面网页的左侧私信徽标、浏览器标签页标题和网站图标提醒中排除 Grok Bot 会话未读数，保留普通私信、其他通知及聊天列表内的 Bot 未读标记。
 // @description:en Exclude Grok Bot conversation unread counts from X's desktop web DM badge, tab title, and favicon while keeping ordinary DMs, other notifications, and in-list bot unread markers.
 // @author       Eason Yang
@@ -333,7 +333,7 @@
     return Object.freeze({
       refresh,
       status: () => ({
-        version: '0.0.3',
+        version: '0.0.4',
         active: !stopped,
         attachedLinks: records.size,
         filteringLinks: [...records.values()].filter(record => record.filtering).length,
