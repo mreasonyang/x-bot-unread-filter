@@ -1,14 +1,19 @@
 {
   "name": "x-bot-unread-filter",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
-  "description": "Exclude Grok Bot from X's navigation DM unread badge.",
+  "description": "Exclude Grok Bot from X's DM badge, tab-title count and favicon reminder.",
   "author": "Eason Yang",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/MrEasonYang/x-bot-unread-filter.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MrEasonYang/x-bot-unread-filter.git"
+  },
   "scripts": {
     "test": "node --test test.cjs",
     "prepare-release": "node scripts/prepare-release.cjs"
   },
-  "devDependencies": { "jsdom": "26.1.0" }
+  "devDependencies": {
+    "jsdom": "26.1.0"
+  }
 }

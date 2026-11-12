@@ -2,9 +2,9 @@
 // @name         X 私信提醒仅计入真人
 // @name:en      X DM badge - exclude Grok Bot
 // @namespace    local.eason.x-human-dm-badge
-// @version      0.0.1
-// @description  从 X 左侧私信徽标排除 Grok Bot 未读数，保留普通私信提醒和 bot 列表未读标记。
-// @description:en Exclude Grok Bot from X's navigation DM badge while keeping ordinary DM alerts and bot conversation unread markers.
+// @version      0.0.2
+// @description  从 X 私信徽标、网页标题和图标提醒中排除 Grok Bot，保留普通私信、其他通知和 bot 列表未读标记。
+// @description:en Exclude Grok Bot from X's DM badge, tab title and favicon while preserving ordinary DMs, other notifications and bot conversation unread markers.
 // @author       Eason Yang
 // @license      MIT
 // @homepageURL  https://github.com/MrEasonYang/x-bot-unread-filter

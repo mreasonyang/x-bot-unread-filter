@@ -4,7 +4,10 @@ const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
 const { readHumanCount, start } = require('./x-human-dm-badge.user.js');
 
-function fixture(human = 0, bots = 1) {
+const plainIcon = 'https://abs.twimg.com/favicons/twitter.3.ico';
+const unreadIcon = 'https://abs.twimg.com/favicons/twitter-pip.3.ico';
+
+function fixture(human = 0, bots = 1, notifications = 0) {
   const dom = new JSDOM('<!doctype html><body><nav></nav><div id="chat-host"></div></body>', {
     url: 'https://x.com/i/chat'
   });
@@ -12,6 +15,25 @@ function fixture(human = 0, bots = 1) {
   Object.defineProperty(state, 'auth', { get() { throw Error('Must not read unrelated state'); } });
   const listeners = new Set();
   const store = { getState: () => state, subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); } };
+  const root = { tag: 3, memoizedProps: { value: { store } } };
+  root.stateNode = { current: root };
+  const titleComponent = {
+    _isDesktop: true,
+    props: { messagesUnreadCount: human + bots, notificationsUnreadCount: notifications },
+    _getUnreadTotal() { throw Error('Must not execute or replace native component methods'); },
+    _setFavicon() { throw Error('Must not execute or replace native component methods'); }
+  };
+  const titleFiber = { tag: 1, stateNode: titleComponent, return: root };
+  root.child = titleFiber;
+  const icon = dom.window.document.createElement('link');
+  icon.rel = 'shortcut icon';
+  dom.window.document.head.append(icon);
+  function nativeHead(base = '主页 / X') {
+    const total = titleComponent.props.messagesUnreadCount + titleComponent.props.notificationsUnreadCount;
+    dom.window.document.title = total ? `(${total}) ${base}` : base;
+    icon.href = total ? unreadIcon : plainIcon;
+  }
+  nativeHead();
   const shadow = dom.window.document.querySelector('#chat-host').attachShadow({ mode: 'open' });
   shadow.innerHTML = '<a href="/i/chat/bots/example" aria-label="Bot, unread"><svg><circle></circle></svg></a>';
   function nav(total) {
@@ -19,7 +41,8 @@ function fixture(human = 0, bots = 1) {
     link.setAttribute('data-testid', 'AppTabBar_DirectMessage_Link');
     link.setAttribute('aria-label', `私信（${total} 条未读 对话）`);
     link.innerHTML = `<div><svg></svg><div class="native-badge" style="display: flex" aria-label="${total} 条未读项目"><span>${total}</span></div><span class="nav-text">私信</span></div>`;
-    link.__reactFiber$test = { return: { memoizedProps: { value: { store } } } };
+    link.__reactFiber$test = { return: root };
+    titleFiber.sibling = link.__reactFiber$test;
     return link;
   }
   let link = nav(human + bots);
@@ -27,6 +50,8 @@ function fixture(human = 0, bots = 1) {
   const controller = start(dom.window);
   function update(newHuman, newBots) {
     state.badgeCount = { chatUnreadCount: newHuman, chatGrokBotUnreadCount: newBots };
+    titleComponent.props.messagesUnreadCount = newHuman + newBots;
+    nativeHead();
     const total = newHuman + newBots;
     link.setAttribute('aria-label', `私信（${total} 条未读 对话）`);
     const badge = link.querySelector('.native-badge:not([data-x-human-dm-badge])');
@@ -36,7 +61,7 @@ function fixture(human = 0, bots = 1) {
     controller.refresh();
   }
   return {
-    dom, shadow, controller, store, listeners, state,
+    dom, shadow, controller, store, listeners, state, titleComponent, icon, nativeHead,
     get link() { return link; },
     native: () => link.querySelector('.native-badge:not([data-x-human-dm-badge])'),
     custom: () => link.querySelector('[data-x-human-dm-badge]'),
@@ -158,5 +183,103 @@ test('the subscription and mutation observer update the display without manual r
   await new Promise(resolve => setTimeout(resolve, 100));
   assert.equal(f.custom().textContent, '2');
   assert.equal(f.link.getAttribute('aria-label'), '私信（2 条未读 对话）');
+  f.close();
+});
+
+test('bot-only unread is excluded from both the title and favicon and restored on stop', () => {
+  const f = fixture(0, 3);
+  assert.equal(f.dom.window.document.title, '主页 / X');
+  assert.equal(f.icon.href, plainIcon);
+  assert.equal(f.controller.status().filteringTitle, true);
+  assert.equal(f.controller.status().filteringIcons, 1);
+  f.controller.stop();
+  assert.equal(f.dom.window.document.title, '(3) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  f.close();
+});
+
+test('tab reminders preserve ordinary DMs and native notifications through counter changes', () => {
+  const f = fixture(2, 3, 4);
+  assert.equal(f.dom.window.document.title, '(6) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  f.update(0, 20);
+  assert.equal(f.dom.window.document.title, '(4) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  f.titleComponent.props.notificationsUnreadCount = 0;
+  f.nativeHead();
+  f.controller.refresh();
+  assert.equal(f.dom.window.document.title, '主页 / X');
+  assert.equal(f.icon.href, plainIcon);
+  f.update(1, 20);
+  assert.equal(f.dom.window.document.title, '(1) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  f.controller.stop();
+  assert.equal(f.dom.window.document.title, '(21) 主页 / X');
+  f.close();
+});
+
+test('when native and filtered title strings coincide, current counters remain authoritative', () => {
+  const f = fixture(2, 3);
+  f.update(2, 0);
+  assert.equal(f.dom.window.document.title, '(2) 主页 / X');
+  f.controller.refresh();
+  assert.equal(f.dom.window.document.title, '(2) 主页 / X');
+  f.controller.stop();
+  assert.equal(f.dom.window.document.title, '(2) 主页 / X');
+  f.close();
+});
+
+test('native title writes and favicon replacement are re-filtered without manual refresh', async () => {
+  const f = fixture(0, 3);
+  f.dom.window.document.title = '(3) 通知 / X';
+  const next = f.icon.cloneNode();
+  next.href = unreadIcon;
+  f.icon.replaceWith(next);
+  await new Promise(resolve => setTimeout(resolve, 130));
+  assert.equal(f.dom.window.document.title, '通知 / X');
+  assert.equal(next.href, plainIcon);
+  f.controller.stop();
+  assert.equal(f.dom.window.document.title, '(3) 通知 / X');
+  assert.equal(next.href, unreadIcon);
+  f.close();
+});
+
+test('unknown native title contracts restore reminders while the nav filter keeps working', () => {
+  const f = fixture(0, 3);
+  delete f.titleComponent.props.notificationsUnreadCount;
+  f.controller.refresh();
+  assert.equal(f.dom.window.document.title, '(3) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  assert.equal(f.native().style.display, 'none');
+  f.close();
+});
+
+test('unrecognized title formats and icons remain untouched', () => {
+  const f = fixture(0, 3);
+  f.dom.window.document.title = '自定义标题';
+  f.icon.href = 'https://abs.twimg.com/favicons/future-icon.ico';
+  f.controller.refresh();
+  assert.equal(f.dom.window.document.title, '自定义标题');
+  assert.equal(f.icon.href, 'https://abs.twimg.com/favicons/future-icon.ico');
+  f.controller.stop();
+  assert.equal(f.dom.window.document.title, '自定义标题');
+  assert.equal(f.icon.href, 'https://abs.twimg.com/favicons/future-icon.ico');
+  f.close();
+});
+
+test('title-only pages and unavailable native title counters preserve native behavior', () => {
+  for (const value of [-1, NaN, Infinity, '2', 1.5]) {
+    const f = fixture(0, 3);
+    f.titleComponent.props.notificationsUnreadCount = value;
+    f.controller.refresh();
+    assert.equal(f.dom.window.document.title, '(3) 主页 / X');
+    assert.equal(f.icon.href, unreadIcon);
+    f.close();
+  }
+  const f = fixture(0, 3);
+  f.titleComponent.props.displayTitleOnly = true;
+  f.dom.window.document.title = '独立标题';
+  f.controller.refresh();
+  assert.equal(f.dom.window.document.title, '独立标题');
   f.close();
 });

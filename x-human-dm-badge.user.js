@@ -2,9 +2,9 @@
 // @name         X 私信提醒仅计入真人
 // @name:en      X DM badge - exclude Grok Bot
 // @namespace    local.eason.x-human-dm-badge
-// @version      0.0.1
-// @description  从 X 左侧私信徽标排除 Grok Bot 未读数，保留普通私信提醒和 bot 列表未读标记。
-// @description:en Exclude Grok Bot from X's navigation DM badge while keeping ordinary DM alerts and bot conversation unread markers.
+// @version      0.0.2
+// @description  从 X 私信徽标、网页标题和图标提醒中排除 Grok Bot，保留普通私信、其他通知和 bot 列表未读标记。
+// @description:en Exclude Grok Bot from X's DM badge, tab title and favicon while preserving ordinary DMs, other notifications and bot conversation unread markers.
 // @author       Eason Yang
 // @license      MIT
 // @homepageURL  https://github.com/MrEasonYang/x-bot-unread-filter
@@ -61,9 +61,52 @@
     return label.replace(/\s*[（(][^()（）]*[）)]\s*$/, '').trim();
   }
 
+  // Read the native title component's already-selected notification count.
+  // This preserves X's notification rules without reading notification entries.
+  function findTabCounts(node) {
+    const key = Object.getOwnPropertyNames(node).find(name => name.startsWith('__reactFiber$'));
+    let root = key ? node[key] : null;
+    for (let depth = 0; root?.return && depth < 200; depth++) root = root.return;
+    root = root?.stateNode?.current || root;
+    const pending = root ? [root] : [];
+    let result = null;
+    let visited = 0;
+    while (pending.length && visited++ < 20000) {
+      const fiber = pending.pop();
+      if (fiber.sibling) pending.push(fiber.sibling);
+      if (fiber.child) pending.push(fiber.child);
+      if (fiber.tag !== 1) continue;
+      const component = fiber.stateNode;
+      if (typeof component?._getUnreadTotal !== 'function' ||
+          typeof component?._setFavicon !== 'function') continue;
+      const props = component.props;
+      if (!props || !hasOwn(props, 'messagesUnreadCount') ||
+          !hasOwn(props, 'notificationsUnreadCount')) return null;
+      const messages = props.messagesUnreadCount;
+      const notifications = props.notificationsUnreadCount;
+      if (![messages, notifications].every(value => Number.isSafeInteger(value) && value >= 0) ||
+          !Number.isSafeInteger(messages + notifications)) return null;
+      const next = {
+        messages, notifications,
+        desktop: component._isDesktop === true,
+        titleOnly: props.displayTitleOnly === true
+      };
+      if (result && Object.keys(next).some(key => result[key] !== next[key])) return null;
+      result = next;
+    }
+    return pending.length ? null : result;
+  }
+
+  const FAVICON = /^https:\/\/abs\.twimg\.com\/favicons\/twitter(?:-pip)?\.3\.ico$/;
+  function faviconFor(href, unread) {
+    return href.replace(/(?:-pip)?\.3\.ico$/, unread ? '-pip.3.ico' : '.3.ico');
+  }
+
   function start(win) {
     const document = win.document;
     const records = new Map();
+    const icons = new Map();
+    let title = null;
     let stopped = false;
     let timer = null;
 
@@ -196,6 +239,65 @@
       records.delete(record.node);
     }
 
+    function restoreTab() {
+      if (title && document.title === title.written) document.title = title.native;
+      title = null;
+      for (const [node, saved] of icons) {
+        if (node.getAttribute('href') === saved.written) node.setAttribute('href', saved.native);
+      }
+      icons.clear();
+    }
+
+    function renderTab() {
+      headObserver.disconnect();
+      try {
+        const record = [...records.values()].find(record => record.store);
+        const human = record ? readHumanCount(record.store.getState()) : null;
+        const counts = record ? findTabCounts(record.node) : null;
+        if (human === null || !counts?.desktop || human > counts.messages ||
+            !Number.isSafeInteger(human + counts.notifications)) {
+          restoreTab();
+          return;
+        }
+        const nativeTotal = counts.messages + counts.notifications;
+        const filteredTotal = human + counts.notifications;
+        const live = document.title;
+        const prefix = live.match(/^\(([0-9]+)\) /);
+        const owned = title && live === title.written;
+        if (!counts.titleOnly && (owned || prefix && Number(prefix[1]) === nativeTotal)) {
+          const base = owned ? title.base : live.slice(prefix[0].length);
+          const format = count => count > 0 ? `(${count}) ${base}` : base;
+          title = { base, native: format(nativeTotal), written: format(filteredTotal) };
+          if (document.title !== title.written) document.title = title.written;
+        } else {
+          if (owned) document.title = title.native;
+          title = null;
+        }
+
+        for (const [node, saved] of icons) {
+          if (!node.isConnected || !node.matches('link[rel="shortcut icon"]') ||
+              !FAVICON.test(node.href)) {
+            if (node.getAttribute('href') === saved.written) node.setAttribute('href', saved.native);
+            icons.delete(node);
+          }
+        }
+        for (const node of document.querySelectorAll('link[rel="shortcut icon"]')) {
+          if (!FAVICON.test(node.href)) continue;
+          const native = faviconFor(node.href, nativeTotal > 0);
+          const written = faviconFor(node.href, filteredTotal > 0);
+          icons.set(node, { native, written });
+          if (node.getAttribute('href') !== written) node.setAttribute('href', written);
+        }
+      } catch {
+        restoreTab();
+      } finally {
+        if (!stopped && document.head) headObserver.observe(document.head, {
+          subtree: true, childList: true, characterData: true,
+          attributes: true, attributeFilter: ['href', 'rel']
+        });
+      }
+    }
+
     function refresh() {
       if (timer !== null) win.clearTimeout(timer);
       timer = null;
@@ -219,26 +321,33 @@
         }
         render(record);
       }
+      renderTab();
     }
 
-    // Only watch ordinary DOM/navigation. The bot conversation Shadow DOM is untouched.
+    // The bot conversation Shadow DOM is untouched.
     const observer = new win.MutationObserver(schedule);
+    const headObserver = new win.MutationObserver(schedule);
     observer.observe(document, { subtree: true, childList: true });
     refresh();
     return Object.freeze({
       refresh,
       status: () => ({
+        version: '0.0.2',
         active: !stopped,
         attachedLinks: records.size,
-        filteringLinks: [...records.values()].filter(record => record.filtering).length
+        filteringLinks: [...records.values()].filter(record => record.filtering).length,
+        filteringTitle: !!title && title.native !== title.written,
+        filteringIcons: [...icons.values()].filter(icon => icon.native !== icon.written).length
       }),
       stop() {
         if (stopped) return;
         stopped = true;
         observer.disconnect();
+        headObserver.disconnect();
         if (timer !== null) win.clearTimeout(timer);
         timer = null;
         for (const record of [...records.values()]) remove(record);
+        restoreTab();
       }
     });
   }
