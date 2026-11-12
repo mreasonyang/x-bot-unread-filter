@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.5
+
+- `@compatible`: Brave, Chrome, Edge.
+- Brave: tested on desktop with Tampermonkey 5.5.1. Chrome / Edge: untested.
+- Runtime filtering logic: unchanged.
+
 ## 0.0.4
 
 - Set the default `@name` to the Chinese title (`X 未读提醒排除 Grok Bot`) so Greasy Fork displays the updated title when `zh-CN` is the default locale, while keeping `@name:en`, `@namespace`, script filename, Greasy Fork ID `605054`, and source/update URLs stable.
