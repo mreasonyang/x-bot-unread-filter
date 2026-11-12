@@ -10,7 +10,9 @@
 
 ## 安装
 
-正式 Greasy Fork 安装页待发布。发布前也可以从本仓库的 [脚本 Raw 链接](https://raw.githubusercontent.com/MrEasonYang/x-bot-unread-filter/main/x-human-dm-badge.user.js)安装。
+**[从 Greasy Fork 安装](https://greasyfork.org/zh-CN/scripts/605054)** · [English install page](https://greasyfork.org/en/scripts/605054)
+
+备用：[从 GitHub Raw 安装](https://raw.githubusercontent.com/MrEasonYang/x-bot-unread-filter/main/x-human-dm-badge.user.js)。
 
 1. 从 [Tampermonkey 官方网站](https://www.tampermonkey.net/)安装对应浏览器扩展。
 2. 在扩展详情中开启 **Allow User Scripts / 允许用户脚本**。新版 Chromium 浏览器需要这一步，见 [官方说明](https://www.tampermonkey.net/faq.php?locale=en&q=Q209)。
