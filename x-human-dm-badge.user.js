@@ -3,7 +3,7 @@
 // @name:zh-CN X 未读提醒排除 Grok Bot
 // @name:en X Unread Reminders: Exclude Grok Bot
 // @namespace    local.eason.x-human-dm-badge
-// @version 0.0.5
+// @version 0.0.6
 // @description 在 x.com 桌面网页的左侧私信徽标、浏览器标签页标题和网站图标提醒中排除 Grok Bot 会话未读数，保留普通私信、其他通知及聊天列表内的 Bot 未读标记。
 // @description:en Exclude Grok Bot conversation unread counts from X's desktop web DM badge, tab title, and favicon while keeping ordinary DMs, other notifications, and in-list bot unread markers.
 // @author       Eason Yang
@@ -112,9 +112,37 @@
     let title = null;
     let stopped = false;
     let timer = null;
+    let immediatePending = false;
 
     function schedule() {
       if (!stopped && timer === null) timer = win.setTimeout(refresh, 40);
+    }
+
+    // Background tabs can delay timers for seconds. Counter changes and initial
+    // attachment must reach the next microtask instead of waiting for that timer.
+    function scheduleImmediate() {
+      if (stopped || immediatePending) return;
+      immediatePending = true;
+      win.queueMicrotask(() => {
+        immediatePending = false;
+        if (!stopped) refresh();
+      });
+    }
+
+    function subscribe(record) {
+      let lastHuman = null;
+      const read = () => {
+        try { return readHumanCount(record.store.getState()); }
+        catch { return null; }
+      };
+      lastHuman = read();
+      record.unsubscribe = record.store.subscribe(() => {
+        const human = read();
+        if (human !== lastHuman) {
+          lastHuman = human;
+          scheduleImmediate();
+        } else schedule();
+      });
     }
 
     function observe(record) {
@@ -320,22 +348,38 @@
         }
         if (!record.store) {
           record.store = findStore(node);
-          if (record.store) record.unsubscribe = record.store.subscribe(schedule);
+          if (record.store) subscribe(record);
         }
         render(record);
       }
       renderTab();
     }
 
-    // The bot conversation Shadow DOM is untouched.
-    const observer = new win.MutationObserver(schedule);
-    const headObserver = new win.MutationObserver(schedule);
+    function affectsTab(mutation) {
+      const relevant = node => node?.nodeName === 'TITLE' ||
+        node?.nodeName === 'LINK' && (node.rel === 'shortcut icon' || icons.has(node));
+      const target = mutation.target.nodeType === 3 ? mutation.target.parentNode : mutation.target;
+      return relevant(target) || mutation.type === 'childList' &&
+        [...mutation.addedNodes, ...mutation.removedNodes].some(relevant);
+    }
+
+    // Correct native head writes in the observer microtask, before a delayed
+    // background timer can leave the unfiltered title/favicon visible.
+    // Ordinary body work stays debounced; the bot Shadow DOM is untouched.
+    const observer = new win.MutationObserver(() => {
+      if (records.size === 0) scheduleImmediate();
+      else schedule();
+    });
+    const headObserver = new win.MutationObserver(mutations => {
+      if (mutations.some(affectsTab)) refresh();
+    });
     observer.observe(document, { subtree: true, childList: true });
+    document.addEventListener('visibilitychange', refresh);
     refresh();
     return Object.freeze({
       refresh,
       status: () => ({
-        version: '0.0.5',
+        version: '0.0.6',
         active: !stopped,
         attachedLinks: records.size,
         filteringLinks: [...records.values()].filter(record => record.filtering).length,
@@ -347,6 +391,7 @@
         stopped = true;
         observer.disconnect();
         headObserver.disconnect();
+        document.removeEventListener('visibilitychange', refresh);
         if (timer !== null) win.clearTimeout(timer);
         timer = null;
         for (const record of [...records.values()]) remove(record);

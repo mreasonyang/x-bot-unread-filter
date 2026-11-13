@@ -1,6 +1,6 @@
 {
   "name": "x-bot-unread-filter",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "description": "Userscript for x.com that excludes Grok Bot unread counts from the navigation DM badge, tab title, and favicon while keeping ordinary DM and notification reminders.",
   "author": "Eason Yang",

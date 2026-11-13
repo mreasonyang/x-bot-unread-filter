@@ -283,3 +283,84 @@ test('title-only pages and unavailable native title counters preserve native beh
   assert.equal(f.dom.window.document.title, '独立标题');
   f.close();
 });
+
+function suspendWindowTimers(win) {
+  let next = 10000;
+  const pending = new Map();
+  win.setTimeout = callback => { pending.set(++next, callback); return next; };
+  win.clearTimeout = id => pending.delete(id);
+  return pending;
+}
+
+async function flushMicrotasks() {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+test('background-safe: native title and favicon rewrites do not wait for timers', async () => {
+  const f = fixture(0, 3, 2);
+  suspendWindowTimers(f.dom.window);
+  for (let round = 0; round < 6; round++) {
+    const notifications = round % 2 ? 2 : 0;
+    f.titleComponent.props.notificationsUnreadCount = notifications;
+    const base = `页面 ${round} / X`;
+    f.nativeHead(base);
+    if (round % 2) f.dom.window.document.querySelector('title').firstChild.data = `(${3 + notifications}) ${base}`;
+    await flushMicrotasks();
+    assert.equal(f.dom.window.document.title, notifications ? `(${notifications}) ${base}` : base);
+    assert.equal(f.icon.href, notifications ? unreadIcon : plainIcon);
+  }
+  f.titleComponent.props.notificationsUnreadCount = 0;
+  f.nativeHead('聊天 / X');
+  const next = f.icon.cloneNode();
+  next.href = unreadIcon;
+  f.icon.replaceWith(next);
+  await flushMicrotasks();
+  assert.equal(f.dom.window.document.title, '聊天 / X');
+  assert.equal(next.href, plainIcon);
+  f.close();
+});
+
+test('background-safe: ordinary-DM counter changes are reflected without a native title write', async () => {
+  const f = fixture(1, 3);
+  suspendWindowTimers(f.dom.window);
+  f.state.badgeCount.chatUnreadCount = 2;
+  f.titleComponent.props.messagesUnreadCount = 5;
+  for (const listener of f.listeners) listener();
+  await flushMicrotasks();
+  assert.equal(f.dom.window.document.title, '(2) 主页 / X');
+  assert.equal(f.custom().textContent, '2');
+  assert.equal(f.icon.href, unreadIcon);
+  f.close();
+});
+
+test('background-safe: first navigation attachment does not depend on a delayed timer', async () => {
+  const f = fixture(0, 3);
+  f.controller.stop();
+  f.link.remove();
+  suspendWindowTimers(f.dom.window);
+  const controller = start(f.dom.window);
+  f.dom.window.document.querySelector('nav').append(f.link);
+  await flushMicrotasks();
+  assert.equal(f.dom.window.document.title, '主页 / X');
+  assert.equal(f.native().style.display, 'none');
+  assert.equal(f.icon.href, plainIcon);
+  controller.stop();
+  f.close();
+});
+
+test('background-safe: stopping cancels queued immediate corrections', async () => {
+  const f = fixture(1, 3);
+  suspendWindowTimers(f.dom.window);
+  f.state.badgeCount.chatUnreadCount = 2;
+  f.titleComponent.props.messagesUnreadCount = 5;
+  for (const listener of f.listeners) listener();
+  f.nativeHead();
+  f.controller.stop();
+  await flushMicrotasks();
+  assert.equal(f.dom.window.document.title, '(5) 主页 / X');
+  assert.equal(f.icon.href, unreadIcon);
+  assert.equal(f.custom(), null);
+  f.close();
+});

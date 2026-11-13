@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.6
+
+- Correct title/favicon rewrites in the MutationObserver microtask, without waiting for background-tab timers.
+- Attach to newly mounted navigation and reflect ordinary-DM counter changes through a coalesced microtask; refresh on visibility changes.
+- Keep ordinary body updates debounced and preserve native reminders for unknown contracts.
+- Pass 20 automated tests, including suspended-timer rewrites, initial attachment, ordinary-DM updates and stopping queued work.
+
 ## 0.0.5
 
 - `@compatible`: Brave, Chrome, Edge.
