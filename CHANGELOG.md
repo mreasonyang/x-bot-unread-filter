@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.7
+
+- Correct native DM badge replacements and unread-label rewrites in the MutationObserver microtask.
+- Observe native badge style and aria-hidden restoration, so display-only changes cannot expose the combined unread count.
+- Reconnect replaced navigation links without waiting for background timers.
+- Pass 24 automated tests, including four suspended-timer sidebar regressions.
+
 ## 0.0.6
 
 - Correct title/favicon rewrites in the MutationObserver microtask, without waiting for background-tab timers.

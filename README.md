@@ -39,7 +39,7 @@
 ## 验证状态与限制
 
 - **已验证环境**：macOS Brave 桌面版 + Tampermonkey 5.5.1（覆盖持久化安装、编辑器内替换旧版升级、页面刷新、首页与聊天页切换、仅 Bot 未读过滤，以及导航徽标、标题和图标提醒的还原）。
-- **测试覆盖**：20 项自动化测试全部通过，包含普通私信与 Bot 混合计数、其他通知保留、远端字段回退、SPA 导航重建及还原逻辑。
+- **测试覆盖**：24 项自动化测试全部通过，包含普通私信与 Bot 混合计数、其他通知保留、远端字段回退、SPA 导航重建及还原逻辑。
 - **未实测范围**：真实普通私信在线新到达的完整链路、跨版本/改名自动升级、其他浏览器及其他脚本管理器尚未实测。
 
 ## 开发与反馈
@@ -60,6 +60,6 @@ npm 依赖仅用于本地测试，不发布到 npm；`prepare-release` 仅在本
 
 **x-bot-unread-filter** (`x-human-dm-badge.user.js`) is an MIT-licensed userscript for `https://x.com/*` on desktop browsers. It excludes X's **Grok Bot** conversation unread counts from the left navigation DM badge, browser tab title, and favicon while keeping ordinary DM reminders, X's selected other-notification counts, and in-list bot unread dots. It only filters X's Grok Bot counter—it does not detect whether ordinary X accounts are real humans or bots, mark messages as read, or affect mobile apps, push notifications, or OS badges.
 
-The script reads only X's independent ordinary-DM counter and the native title component's selected unread counts; it never reads message bodies, notification entries, or credentials, never calls or replaces native component methods, and makes no network requests (changing the favicon may let the browser load X's ordinary icon asset). Verified on macOS Brave with Tampermonkey 5.5.1 and 20 automated tests; live arrival of a new ordinary DM, automatic cross-version/rename upgrades, and other browsers/managers are untested.
+The script reads only X's independent ordinary-DM counter and the native title component's selected unread counts; it never reads message bodies, notification entries, or credentials, never calls or replaces native component methods, and makes no network requests (changing the favicon may let the browser load X's ordinary icon asset). Verified on macOS Brave with Tampermonkey 5.5.1 and 24 automated tests; live arrival of a new ordinary DM, automatic cross-version/rename upgrades, and other browsers/managers are untested.
 
 **Install & upgrade**: Install [Tampermonkey](https://www.tampermonkey.net/), enable **Allow User Scripts** ([FAQ Q209](https://www.tampermonkey.net/faq.php?locale=en&q=Q209)), install from [Greasy Fork](https://greasyfork.org/en/scripts/605054) or [GitHub Raw](https://raw.githubusercontent.com/MrEasonYang/x-bot-unread-filter/main/x-human-dm-badge.user.js), and reload `x.com` (or download the `.user.js` and use **Utilities → Import from file** if clicking install shows source text). Because `0.0.4` updates the default `@name` for Greasy Fork display compatibility and script managers match installations by `@name` + `@namespace` ([meta keys guide](https://greasyfork.org/en/help/meta-keys)), users upgrading from `0.0.1`–`0.0.3` should replace the source inside their existing Tampermonkey editor entry (verified in Brave to keep a single entry) or delete the old entry before installing `0.0.4` to avoid duplicate entries. If you restrict Tampermonkey site access to `x.com`, allow `update.greasyfork.org` / `raw.githubusercontent.com` when prompted for updates or import new versions manually. Disable or remove the script and reload `x.com` to restore native reminders. Unofficial and unaffiliated with X, xAI, or Tampermonkey. [Issues & feedback](https://github.com/mreasonyang/x-bot-unread-filter/issues).

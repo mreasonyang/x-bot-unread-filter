@@ -364,3 +364,64 @@ test('background-safe: stopping cancels queued immediate corrections', async () 
   assert.equal(f.custom(), null);
   f.close();
 });
+
+test('sidebar-fast: replacing a native badge is filtered without a timer', async () => {
+  const f = fixture(0, 3);
+  suspendWindowTimers(f.dom.window);
+  const next = f.native().cloneNode(true);
+  next.style.setProperty('display', 'flex');
+  next.removeAttribute('aria-hidden');
+  f.native().replaceWith(next);
+  await flushMicrotasks();
+  assert.equal(next.style.getPropertyValue('display'), 'none');
+  assert.equal(next.style.getPropertyPriority('display'), 'important');
+  assert.equal(f.custom(), null);
+  assert.ok(f.shadow.querySelector('circle'));
+  f.close();
+});
+
+test('sidebar-fast: native style-only restoration cannot expose the combined count', async () => {
+  const f = fixture(2, 3);
+  suspendWindowTimers(f.dom.window);
+  f.native().style.setProperty('display', 'flex');
+  f.native().setAttribute('aria-hidden', 'false');
+  await flushMicrotasks();
+  assert.equal(f.native().style.getPropertyValue('display'), 'none');
+  assert.equal(f.native().getAttribute('aria-hidden'), 'true');
+  assert.equal(f.custom().textContent, '2');
+  assert.equal(f.link.getAttribute('aria-label'), '私信（2 条未读 对话）');
+  f.controller.stop();
+  assert.equal(f.native().style.display, 'flex');
+  assert.equal(f.custom(), null);
+  f.close();
+});
+
+test('sidebar-fast: replacing the whole navigation link reconnects before timers run', async () => {
+  const f = fixture(0, 3);
+  suspendWindowTimers(f.dom.window);
+  const oldNative = f.native();
+  const next = f.link.cloneNode(true);
+  next.__reactFiber$test = f.link.__reactFiber$test;
+  next.setAttribute('aria-label', '私信（3 条未读 对话）');
+  const badge = next.querySelector('.native-badge');
+  badge.style.setProperty('display', 'flex');
+  badge.removeAttribute('aria-hidden');
+  f.link.replaceWith(next);
+  await flushMicrotasks();
+  assert.equal(badge.style.display, 'none');
+  assert.equal(next.getAttribute('aria-label'), '私信');
+  assert.equal(oldNative.style.display, 'flex');
+  assert.equal(f.listeners.size, 1);
+  assert.equal(f.controller.status().attachedLinks, 1);
+  f.close();
+});
+
+test('sidebar-fast: native unread label rewrites are corrected without a timer', async () => {
+  const f = fixture(0, 3);
+  suspendWindowTimers(f.dom.window);
+  f.link.setAttribute('aria-label', '私信（3 条未读 对话）');
+  await flushMicrotasks();
+  assert.equal(f.link.getAttribute('aria-label'), '私信');
+  assert.equal(f.native().style.display, 'none');
+  f.close();
+});

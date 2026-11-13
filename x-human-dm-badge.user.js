@@ -3,7 +3,7 @@
 // @name:zh-CN X 未读提醒排除 Grok Bot
 // @name:en X Unread Reminders: Exclude Grok Bot
 // @namespace    local.eason.x-human-dm-badge
-// @version 0.0.6
+// @version 0.0.7
 // @description 在 x.com 桌面网页的左侧私信徽标、浏览器标签页标题和网站图标提醒中排除 Grok Bot 会话未读数，保留普通私信、其他通知及聊天列表内的 Bot 未读标记。
 // @description:en Exclude Grok Bot conversation unread counts from X's desktop web DM badge, tab title, and favicon while keeping ordinary DMs, other notifications, and in-list bot unread markers.
 // @author       Eason Yang
@@ -148,7 +148,7 @@
     function observe(record) {
       record.observer.observe(record.node, {
         subtree: true, childList: true, characterData: true,
-        attributes: true, attributeFilter: ['aria-label', 'class']
+        attributes: true, attributeFilter: ['aria-label', 'class', 'style', 'aria-hidden']
       });
     }
 
@@ -342,7 +342,7 @@
           record = {
             node, store: null, unsubscribe: null, saved: null, clone: null,
             templateLabel: node.getAttribute('aria-label'), writtenLabel: null,
-            filtering: false, observer: new win.MutationObserver(schedule)
+            filtering: false, observer: new win.MutationObserver(refresh)
           };
           records.set(node, record);
         }
@@ -367,7 +367,7 @@
     // background timer can leave the unfiltered title/favicon visible.
     // Ordinary body work stays debounced; the bot Shadow DOM is untouched.
     const observer = new win.MutationObserver(() => {
-      if (records.size === 0) scheduleImmediate();
+      if (records.size === 0 || [...records.keys()].some(node => !node.isConnected)) scheduleImmediate();
       else schedule();
     });
     const headObserver = new win.MutationObserver(mutations => {
@@ -379,7 +379,7 @@
     return Object.freeze({
       refresh,
       status: () => ({
-        version: '0.0.6',
+        version: '0.0.7',
         active: !stopped,
         attachedLinks: records.size,
         filteringLinks: [...records.values()].filter(record => record.filtering).length,
